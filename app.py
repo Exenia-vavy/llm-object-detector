@@ -107,6 +107,7 @@ async def analyze_image(file: UploadFile = File(...)):
         return {"error": f"Erreur de traitement : {str(e)}"}
 
 # DÉMARRAGE NATIF SÉCURISÉ POUR TIMEWEB
+# DÉMARRAGE ADAPTÉ POUR LA PASSERELLE TIMEWEB TWC1
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=False)
+    uvicorn.run("app:app", host="0.0.0.0", port=3000, reload=False)
