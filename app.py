@@ -5,8 +5,6 @@ from PIL import Image
 
 app = FastAPI()
 
-# Dictionnaire de détection basé sur les dominantes chromatiques réelles
-# (Idéal pour simuler un modèle de classification visuel robuste et ultra-léger)
 CATEGORIES_VISION = {
     "rouge": "Tomate (Tomato) / Pomme rouge (Red Apple)",
     "vert": "Pomme verte (Granny Smith) / Concombre (Cucumber)",
@@ -23,7 +21,7 @@ async def main():
         <meta charset="UTF-8">
         <title>Scanner d'Objets I.A.</title>
         <style>
-            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 40px; display: flex; justify-content: center; }
+            body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; margin: 0; padding: 40px; display: flex; justify-content: center; }
             .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 500px; width: 100%; text-align: center; }
             h2 { color: #2c3e50; margin-bottom: 20px; }
             input[type=file] { margin: 20px 0; padding: 10px; border: 1px dashed #3498db; width: 80%; border-radius: 6px; background: #fafafa; }
@@ -43,18 +41,15 @@ async def main():
             </form>
             <div id="result"></div>
         </div>
-
         <script>
             document.getElementById('uploadForm').onsubmit = async (e) => {
                 e.preventDefault();
                 const fileInput = document.getElementById('imageInput');
                 const formData = new FormData();
                 formData.append('file', fileInput.files[0]);
-
                 const resultDiv = document.getElementById('result');
                 resultDiv.style.display = "block";
                 resultDiv.innerHTML = "<b>Analyse des pixels et des formes en cours...</b>";
-
                 try {
                     const response = await fetch('/analyze', { method: 'POST', body: formData });
                     const data = await response.json();
@@ -64,7 +59,7 @@ async def main():
                         resultDiv.innerText = "Erreur du serveur : " + (data.error || "Inconnue");
                     }
                 } catch (err) {
-                    resultDiv.innerText = "Erreur de connexion réseau avec le serveur distant.";
+                    resultDiv.innerText = "Erreur de connexion réseau.";
                 }
             };
         </script>
@@ -78,25 +73,18 @@ async def analyze_image(file: UploadFile = File(...)):
         contents = await file.read()
         if not contents:
             return {"error": "Le fichier envoyé est vide."}
-
         image = Image.open(io.BytesIO(contents)).convert("RGB")
-        
-        # Échantillonnage statistique de la matrice de couleur de l'objet
         img_small = image.resize((32, 32))
         pixels = list(img_small.getdata())
-        
         r_total, g_total, b_total = 0, 0, 0
         for r, g, b in pixels:
             r_total += r
             g_total += g
             b_total += b
-            
         num_pixels = len(pixels)
         r_avg = r_total / num_pixels
         g_avg = g_total / num_pixels
         b_avg = b_total / num_pixels
-        
-        # Algorithme de décision de classification
         if r_avg > g_avg * 1.1 and r_avg > b_avg * 1.1:
             choix = "rouge"
             score = min(98.4, 65.0 + (r_avg - g_avg))
@@ -109,20 +97,11 @@ async def analyze_image(file: UploadFile = File(...)):
         else:
             choix = "neutre"
             score = 84.5
-
         nom_objet = CATEGORIES_VISION[choix]
-
         html = f"<h3>🧠 Résultat de la Détection Spatiale</h3>"
         html += f"<p><b>Élément identifié :</b> <span class='badge'>{nom_objet}</span></p>"
         html += f"<p><b>Indice de confiance :</b> {round(score, 1)}%</p>"
         html += f"<p><small>Analyse mathématique d'histogramme spectral réussie (Modèle optimisé Cloud).</small></p>"
-        
         return {"result": html}
-        
     except Exception as e:
         return {"error": f"Erreur de traitement : {str(e)}"}
-
-# Démarrage automatique calé sur le port par défaut attendu par Timeweb en interne
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
