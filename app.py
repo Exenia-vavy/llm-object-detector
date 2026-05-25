@@ -46,7 +46,7 @@ async def main():
                 e.preventDefault();
                 const fileInput = document.getElementById('imageInput');
                 const formData = new FormData();
-                formData.append('file', fileInput.files[0]);
+                formData.append('file', fileInput.files);
                 const resultDiv = document.getElementById('result');
                 resultDiv.style.display = "block";
                 resultDiv.innerHTML = "<b>Analyse des pixels et des formes en cours...</b>";
@@ -105,3 +105,8 @@ async def analyze_image(file: UploadFile = File(...)):
         return {"result": html}
     except Exception as e:
         return {"error": f"Erreur de traitement : {str(e)}"}
+
+# DÉMARRAGE NATIF SÉCURISÉ POUR TIMEWEB
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=False)
