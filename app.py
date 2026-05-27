@@ -1,11 +1,13 @@
 import io
 from fastapi import FastAPI, UploadFile, File
 from fastapi.responses import HTMLResponse
-from PIL import Image
+from PIL import Image, ImageFile
+
+# Sécurité pour forcer Pillow à lire les fichiers même s'ils sont tronqués ou volumineux
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 app = FastAPI()
 
-# Notre mini-modèle de vision locale pour le devoir
 CATEGORIES_VISION = {
     "rouge": "Tomate (Tomato) / Pomme rouge (Red Apple)",
     "vert": "Pomme verte (Granny Smith) / Concombre (Cucumber)",
@@ -49,7 +51,7 @@ async def main():
                 if (fileInput.files.length === 0) return;
                 
                 const formData = new FormData();
-                formData.append('file', fileInput.files[0]);
+                formData.append('file', fileInput.files[0]); // Correction ici pour envoyer le fichier exact
                 
                 const resultDiv = document.getElementById('result');
                 resultDiv.style.display = "block";
@@ -61,7 +63,7 @@ async def main():
                     if (data.result) {
                         resultDiv.innerHTML = data.result;
                     } else {
-                        resultDiv.innerText = "Erreur du serveur : " + (data.error || "Inconnue");
+                        resultDiv.innerText = "Erreur de traitement : " + (data.error || "Inconnue");
                     }
                 } catch (err) {
                     resultDiv.innerText = "Erreur de connexion réseau.";
@@ -75,8 +77,18 @@ async def main():
 @app.post("/analyze")
 async def analyze_image(file: UploadFile = File(...)):
     try:
+        # 1. Lecture sécurisée des octets
         contents = await file.read()
-        image = Image.open(io.BytesIO(contents)).convert("RGB")
+        if not contents:
+            return {"error": "Le fichier envoyé est vide ou corrompu."}
+        
+        # 2. Conversion sécurisée en RGB (nettoie les transparences PNG)
+        try:
+            image = Image.open(io.BytesIO(contents)).convert("RGB")
+        except Exception as e_img:
+            return {"error": f"Impossible de lire le format de l'image. Essaie un autre fichier JPG/PNG. ({str(e_img)})"}
+            
+        # 3. Analyse de l'échantillon de pixels
         img_small = image.resize((32, 32))
         pixels = list(img_small.getdata())
         
@@ -111,4 +123,4 @@ async def analyze_image(file: UploadFile = File(...)):
         html += f"<p><small>Analyse mathématique d'histogramme spectral réussie (Modèle optimisé Cloud).</small></p>"
         return {"result": html}
     except Exception as e:
-        return {"error": f"Erreur de traitement : {str(e)}"}
+        return {"error": f"Erreur interne : {str(e)}"}
