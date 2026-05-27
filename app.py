@@ -1,10 +1,7 @@
 import io
 from fastapi import FastAPI, UploadFile, File
 from fastapi.responses import HTMLResponse
-from PIL import Image, ImageFile
-
-# Sécurité pour forcer Pillow à lire les fichiers même s'ils sont tronqués ou volumineux
-ImageFile.LOAD_TRUNCATED_IMAGES = True
+from PIL import Image
 
 app = FastAPI()
 
@@ -17,7 +14,7 @@ CATEGORIES_VISION = {
 
 @app.get("/", response_class=HTMLResponse)
 async def main():
-    return """
+    html_content = """
     <!DOCTYPE html>
     <html lang="fr">
     <head>
@@ -51,7 +48,7 @@ async def main():
                 if (fileInput.files.length === 0) return;
                 
                 const formData = new FormData();
-                formData.append('file', fileInput.files[0]); // Correction ici pour envoyer le fichier exact
+                formData.append('file', fileInput.files[0]);
                 
                 const resultDiv = document.getElementById('result');
                 resultDiv.style.display = "block";
@@ -63,7 +60,7 @@ async def main():
                     if (data.result) {
                         resultDiv.innerHTML = data.result;
                     } else {
-                        resultDiv.innerText = "Erreur de traitement : " + (data.error || "Inconnue");
+                        resultDiv.innerText = "Erreur du serveur : " + (data.error || "Inconnue");
                     }
                 } catch (err) {
                     resultDiv.innerText = "Erreur de connexion réseau.";
@@ -73,36 +70,27 @@ async def main():
     </body>
     </html>
     """
+    # CORRECTION CRUCIALE : Renvoi explicite sous forme d'un conteneur HTMLResponse Starlette
+    return HTMLResponse(content=html_content, status_code=200)
 
 @app.post("/analyze")
 async def analyze_image(file: UploadFile = File(...)):
     try:
-        # 1. Lecture sécurisée des octets
         contents = await file.read()
         if not contents:
-            return {"error": "Le fichier envoyé est vide ou corrompu."}
-        
-        # 2. Conversion sécurisée en RGB (nettoie les transparences PNG)
-        try:
-            image = Image.open(io.BytesIO(contents)).convert("RGB")
-        except Exception as e_img:
-            return {"error": f"Impossible de lire le format de l'image. Essaie un autre fichier JPG/PNG. ({str(e_img)})"}
-            
-        # 3. Analyse de l'échantillon de pixels
+            return {"error": "Le fichier envoyé est vide."}
+        image = Image.open(io.BytesIO(contents)).convert("RGB")
         img_small = image.resize((32, 32))
         pixels = list(img_small.getdata())
-        
         r_total, g_total, b_total = 0, 0, 0
         for r, g, b in pixels:
             r_total += r
             g_total += g
             b_total += b
-            
         num_pixels = len(pixels)
         r_avg = r_total / num_pixels
         g_avg = g_total / num_pixels
         b_avg = b_total / num_pixels
-        
         if r_avg > g_avg * 1.1 and r_avg > b_avg * 1.1:
             choix = "rouge"
             score = min(98.4, 65.0 + (r_avg - g_avg))
@@ -115,7 +103,6 @@ async def analyze_image(file: UploadFile = File(...)):
         else:
             choix = "neutre"
             score = 84.5
-            
         nom_objet = CATEGORIES_VISION[choix]
         html = f"<h3>🧠 Résultat de la Détection Spatiale</h3>"
         html += f"<p><b>Élément identifié :</b> <span class='badge'>{nom_objet}</span></p>"
@@ -123,4 +110,4 @@ async def analyze_image(file: UploadFile = File(...)):
         html += f"<p><small>Analyse mathématique d'histogramme spectral réussie (Modèle optimisé Cloud).</small></p>"
         return {"result": html}
     except Exception as e:
-        return {"error": f"Erreur interne : {str(e)}"}
+        return {"error": f"Erreur de traitement : {str(e)}"}
