@@ -5,6 +5,7 @@ from PIL import Image
 
 app = FastAPI()
 
+# Notre mini-modèle de vision locale pour le devoir
 CATEGORIES_VISION = {
     "rouge": "Tomate (Tomato) / Pomme rouge (Red Apple)",
     "vert": "Pomme verte (Granny Smith) / Concombre (Cucumber)",
@@ -45,11 +46,15 @@ async def main():
             document.getElementById('uploadForm').onsubmit = async (e) => {
                 e.preventDefault();
                 const fileInput = document.getElementById('imageInput');
+                if (fileInput.files.length === 0) return;
+                
                 const formData = new FormData();
-                formData.append('file', fileInput.files);
+                formData.append('file', fileInput.files[0]);
+                
                 const resultDiv = document.getElementById('result');
                 resultDiv.style.display = "block";
                 resultDiv.innerHTML = "<b>Analyse des pixels et des formes en cours...</b>";
+                
                 try {
                     const response = await fetch('/analyze', { method: 'POST', body: formData });
                     const data = await response.json();
@@ -71,20 +76,21 @@ async def main():
 async def analyze_image(file: UploadFile = File(...)):
     try:
         contents = await file.read()
-        if not contents:
-            return {"error": "Le fichier envoyé est vide."}
         image = Image.open(io.BytesIO(contents)).convert("RGB")
         img_small = image.resize((32, 32))
         pixels = list(img_small.getdata())
+        
         r_total, g_total, b_total = 0, 0, 0
         for r, g, b in pixels:
             r_total += r
             g_total += g
             b_total += b
+            
         num_pixels = len(pixels)
         r_avg = r_total / num_pixels
         g_avg = g_total / num_pixels
         b_avg = b_total / num_pixels
+        
         if r_avg > g_avg * 1.1 and r_avg > b_avg * 1.1:
             choix = "rouge"
             score = min(98.4, 65.0 + (r_avg - g_avg))
@@ -97,6 +103,7 @@ async def analyze_image(file: UploadFile = File(...)):
         else:
             choix = "neutre"
             score = 84.5
+            
         nom_objet = CATEGORIES_VISION[choix]
         html = f"<h3>🧠 Résultat de la Détection Spatiale</h3>"
         html += f"<p><b>Élément identifié :</b> <span class='badge'>{nom_objet}</span></p>"
@@ -105,9 +112,3 @@ async def analyze_image(file: UploadFile = File(...)):
         return {"result": html}
     except Exception as e:
         return {"error": f"Erreur de traitement : {str(e)}"}
-
-# DÉMARRAGE NATIF SÉCURISÉ POUR TIMEWEB
-# DÉMARRAGE ADAPTÉ POUR LA PASSERELLE TIMEWEB TWC1
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("app:app", host="0.0.0.0", port=3000, reload=False)
