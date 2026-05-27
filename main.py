@@ -13,6 +13,7 @@ CATEGORIES_VISION = {
 }
 
 @app.get("/", response_class=HTMLResponse)
+@app.get("/index", response_class=HTMLResponse)
 async def main():
     html_content = """
     <!DOCTYPE html>
@@ -70,7 +71,6 @@ async def main():
     </body>
     </html>
     """
-    # CORRECTION CRUCIALE : Renvoi explicite sous forme d'un conteneur HTMLResponse Starlette
     return HTMLResponse(content=html_content, status_code=200)
 
 @app.post("/analyze")
@@ -79,18 +79,22 @@ async def analyze_image(file: UploadFile = File(...)):
         contents = await file.read()
         if not contents:
             return {"error": "Le fichier envoyé est vide."}
+        
         image = Image.open(io.BytesIO(contents)).convert("RGB")
         img_small = image.resize((32, 32))
         pixels = list(img_small.getdata())
+        
         r_total, g_total, b_total = 0, 0, 0
         for r, g, b in pixels:
             r_total += r
             g_total += g
             b_total += b
+            
         num_pixels = len(pixels)
         r_avg = r_total / num_pixels
         g_avg = g_total / num_pixels
         b_avg = b_total / num_pixels
+        
         if r_avg > g_avg * 1.1 and r_avg > b_avg * 1.1:
             choix = "rouge"
             score = min(98.4, 65.0 + (r_avg - g_avg))
@@ -103,6 +107,7 @@ async def analyze_image(file: UploadFile = File(...)):
         else:
             choix = "neutre"
             score = 84.5
+            
         nom_objet = CATEGORIES_VISION[choix]
         html = f"<h3>🧠 Résultat de la Détection Spatiale</h3>"
         html += f"<p><b>Élément identifié :</b> <span class='badge'>{nom_objet}</span></p>"
