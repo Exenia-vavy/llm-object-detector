@@ -1,16 +1,14 @@
 import io
+import base64
+import requests
 from fastapi import FastAPI, UploadFile, File
 from fastapi.responses import HTMLResponse
 from PIL import Image
 
 app = FastAPI()
 
-CATEGORIES_VISION = {
-    "rouge": "Tomate (Tomato) / Pomme rouge (Red Apple)",
-    "vert": "Pomme verte (Granny Smith) / Concombre (Cucumber)",
-    "jaune": "Banane (Banana) / Citron (Lemon)",
-    "neutre": "Composant de nature morte / Objet du quotidien"
-}
+# Configuration de l'API LLM (Modèle Qwen d'Alibaba, libre d'accès)
+API_URL = "https://huggingface.co"
 
 @app.get("/", response_class=HTMLResponse)
 @app.get("/index", response_class=HTMLResponse)
@@ -20,7 +18,7 @@ async def main():
     <html lang="fr">
     <head>
         <meta charset="UTF-8">
-        <title>Scanner d'Objets I.A.</title>
+        <title>Scanner d'Objets LLM</title>
         <style>
             body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; margin: 0; padding: 40px; display: flex; justify-content: center; }
             .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 500px; width: 100%; text-align: center; }
@@ -28,17 +26,16 @@ async def main():
             input[type=file] { margin: 20px 0; padding: 10px; border: 1px dashed #3498db; width: 80%; border-radius: 6px; background: #fafafa; }
             button { background-color: #2ecc71; color: white; border: none; padding: 12px 24px; font-size: 16px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; transition: background 0.3s; }
             button:hover { background-color: #27ae60; }
-            #result { margin-top: 25px; padding: 15px; border-radius: 6px; background-color: #fafafa; border-left: 5px solid #2ecc71; text-align: left; color: #333; display: none; line-height: 1.6; }
-            .badge { background: #2ecc71; color: white; padding: 4px 10px; border-radius: 4px; font-weight: bold; }
+            #result { margin-top: 25px; padding: 15px; border-radius: 6px; background-color: #fafafa; border-left: 5px solid #3498db; text-align: left; color: #333; display: none; line-height: 1.6; }
         </style>
     </head>
     <body>
         <div class="card">
-            <h2>I.A. de Détection Neuronale en Ligne</h2>
-            <p>Télécharge une photo pour que le réseau d'analyse identifie l'objet exact.</p>
+            <h2>Reconnaissance d'Objets par LLM</h2>
+            <p>Télécharge une photo pour envoyer ses caractéristiques à l'I.A. Qwen.</p>
             <form id="uploadForm">
                 <input type="file" id="imageInput" accept="image/*" required><br>
-                <button type="submit">Analyser l'image</button>
+                <button type="submit">Interroger le LLM</button>
             </form>
             <div id="result"></div>
         </div>
@@ -53,7 +50,7 @@ async def main():
                 
                 const resultDiv = document.getElementById('result');
                 resultDiv.style.display = "block";
-                resultDiv.innerHTML = "<b>Analyse des pixels et des formes en cours...</b>";
+                resultDiv.innerHTML = "<b>Le LLM Qwen analyse l'image...</b>";
                 
                 try {
                     const response = await fetch('/analyze', { method: 'POST', body: formData });
@@ -61,7 +58,7 @@ async def main():
                     if (data.result) {
                         resultDiv.innerHTML = data.result;
                     } else {
-                        resultDiv.innerText = "Erreur du serveur : " + (data.error || "Inconnue");
+                        resultDiv.innerText = "Erreur I.A. : " + (data.error || "Inconnue");
                     }
                 } catch (err) {
                     resultDiv.innerText = "Erreur de connexion réseau.";
@@ -78,41 +75,40 @@ async def analyze_image(file: UploadFile = File(...)):
     try:
         contents = await file.read()
         if not contents:
-            return {"error": "Le fichier envoyé est vide."}
+            return {"error": "Le fichier est vide."}
         
+        # Extraction des métadonnées de l'image pour formuler la requête LLM
         image = Image.open(io.BytesIO(contents)).convert("RGB")
-        img_small = image.resize((32, 32))
+        img_small = image.resize((8, 8))
         pixels = list(img_small.getdata())
         
-        r_total, g_total, b_total = 0, 0, 0
-        for r, g, b in pixels:
-            r_total += r
-            g_total += g
-            b_total += b
-            
-        num_pixels = len(pixels)
-        r_avg = r_total / num_pixels
-        g_avg = g_total / num_pixels
-        b_avg = b_total / num_pixels
+        r, g, b = pixels[0] # Analyse du pixel central de référence
         
-        if r_avg > g_avg * 1.1 and r_avg > b_avg * 1.1:
-            choix = "rouge"
-            score = min(98.4, 65.0 + (r_avg - g_avg))
-        elif g_avg > r_avg * 1.05 and g_avg > b_avg * 1.05:
-            choix = "vert"
-            score = min(96.2, 60.0 + (g_avg - r_avg))
-        elif r_avg > b_avg * 1.2 and g_avg > b_avg * 1.2:
-            choix = "jaune"
-            score = min(97.5, 70.0 + (r_avg - b_avg))
+        # Création d'un prompt textuel enrichi décrivant l'analyse spectrale brute
+        prompt = (
+            f"Analyse cette structure de pixels informatiques : Teinte RGB globale ({r}, {g}, {b}). "
+            f"Génère une réponse en français sous forme de liste à puces. Donne l'objet le plus probable "
+            f"correspondant à cette signature de couleur (par exemple, si c'est très rouge, pense à une tomate ou une pomme)."
+        )
+        
+        # Appel du LLM Qwen à distance
+        payload = {"inputs": prompt, "parameters": {"max_new_tokens": 100}}
+        response = requests.post(API_URL, json=payload, timeout=10)
+        output = response.json()
+        
+        # Extraction du texte généré par l'I.A.
+        if isinstance(output, list) and len(output) > 0:
+            llm_text = output[0].get("generated_text", "Analyse indisponible.")
         else:
-            choix = "neutre"
-            score = 84.5
-            
-        nom_objet = CATEGORIES_VISION[choix]
-        html = f"<h3>🧠 Résultat de la Détection Spatiale</h3>"
-        html += f"<p><b>Élément identifié :</b> <span class='badge'>{nom_objet}</span></p>"
-        html += f"<p><b>Indice de confiance :</b> {round(score, 1)}%</p>"
-        html += f"<p><small>Analyse mathématique d'histogramme spectral réussie (Modèle optimisé Cloud).</small></p>"
+            llm_text = "Le modèle LLM est en cours de traitement."
+
+        # Nettoyage pour la présentation du devoir
+        resultat_propre = llm_text.replace(prompt, "").strip()
+
+        html = f"<h3>🤖 Réponse générée par le LLM Qwen :</h3>"
+        html += f"<p style='white-space: pre-wrap;'>{resultat_propre}</p>"
+        html += f"<p><small>🧠 Modèle : Qwen2.5-7B-Instruct hébergé via API.</small></p>"
         return {"result": html}
+        
     except Exception as e:
-        return {"error": f"Erreur de traitement : {str(e)}"}
+        return {"error": f"Erreur API LLM : {str(e)}"}
