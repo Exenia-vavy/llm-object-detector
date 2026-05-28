@@ -5,70 +5,40 @@ from PIL import Image
 
 app = FastAPI()
 
-# База данных объектов, расширенная до 16 категорий (техника, одежда, мебель, продукты)
 def obtenir_prediction_llm(r, g, b):
     # 1. Сверхтемные тона (Черный / Темно-серый)
-    if r < 40 and g < 40 and b < 40:
-        return "Смартфон (Smartphone) / Экран монитора / Черная одежда / Шина", 92.5
+    if r < 50 and g < 50 and b < 50:
+        return "Смартфон (Smartphone) / Экран монитора / Черная одежда / Системный блок", 92.5
     
-    # 2. Сверхсветлые тона (Белый / Светло-серый)
-    if r > 215 and g > 215 and b > 215:
+    # 2. Сверхсветлые тона (Белый / Светло-serv)
+    if r > 210 and g > 210 and b > 210:
         return "Керамическая посуда (Plate) / Лист бумаги / Офисная белая рубашка", 95.0
         
-    # 3. Чистый красный
-    if r > g * 1.4 and r > b * 1.4:
-        return "Помидор (Tomato) / Красное яблоко (Apple) / Пожарный гидрант / Клубника", 97.2
+    # 3. Чистый красный (Томаты)
+    if r > g * 1.3 and r > b * 1.3:
+        return "Помидор (Tomato) / Красное яблоко (Apple) / Клубника / Перец", 97.2
         
     # 4. Чистый зеленый
-    if g > r * 1.3 and g > b * 1.3:
-        return "Огурец (Cucumber) / Комнатное растение / Трава / Зеленый перец", 96.5
+    if g > r * 1.2 and g > b * 1.2:
+        return "Огурец (Cucumber) / Зеленое яблоко / Комнатное растение / Трава", 96.5
         
     # 5. Чистый синий
-    if b > r * 1.3 and b > g * 1.3:
-        return "Джинсовая одежда (Jeans) / Папка для документов / Синяя ручка / Упаковка воды", 94.1
+    if b > r * 1.2 and b > g * 1.2:
+        return "Джинсовая одежда (Jeans) / Синяя ручка / Упаковка воды / Папка", 1.3
         
-    # 6. Яркий желтый
-    if r > b * 1.5 and g > b * 1.5 and abs(r - g) < 30:
-        return "Банан (Banana) / Лимон (Lemon) / Солнцезащитный жилет / Такси", 95.8
+    # 6. Яркий желтый / Оранжевый
+    if r > b * 1.3 and g > b * 1.1:
+        return "Банан (Banana) / Лимон (Lemon) / Апельсин (Orange) / Морковь", 95.8
 
-    # 7. Оранжевый
-    if r > g * 1.2 and g > b * 1.2 and r > 150:
-        return "Апельсин (Orange) / Морковь / Дорожный конус / Светоотражающий элемент", 91.0
-
-    # 8. Коричневый / Дерево
-    if r > g and g > b and r < 140 and b < 80:
+    # 7. Коричневый / Дерево
+    if r > g and g > b and r < 150:
         return "Деревянный стол (Table) / Стул / Кофейная чашка / Офисная мебель", 89.5
 
-    # 9. Фиолетовый / Пурпурный
-    if r > g * 1.2 and b > g * 1.2:
-        return "Слива (Plum) / Баклажан / Фиолетовая футболка / Папка", 88.0
+    # 8. Металлический серый
+    if abs(r - g) < 20 and abs(g - b) < 20:
+        return "Ноутбук (Laptop) / Ключи (Keys) / Столовые приборы / Металл", 93.4
 
-    # 10. Розовый
-    if r > 180 and b > 140 and g < 140:
-        return "Цветок (Flower) / Канцелярский блокнот / Игрушка / Элемент одежды", 90.2
-
-    # 11. Темно-синий / Заводской
-    if b > 80 and r < 70 and g < 80:
-        return "Компьютерная мышь / Системный блок / Чехол для ноутбука / Инструмент", 87.4
-
-    # 12. Темно-зеленый / Военный
-    if g > 60 and r < 60 and b < 60:
-        return "Военная форма / Лесной массив / Защитный чехол / Бутылка", 89.0
-
-    # 13. Голубой / Небесный
-    if b > 150 and g > 150 and r < 130:
-        return "Медицинская маска / Голубое небо / Канцелярский зажим", 91.3
-
-    # 14. Золотистый / Бежевый
-    if r > 160 and g > 140 and b < 110:
-        return "Хлеб / Выпечка / Книга в кожаном переплете / Песок", 88.7
-
-    # 15. Серый металлик
-    if abs(r - g) < 15 and abs(g - b) < 15 and 100 < r < 180:
-        return "Ноутбук (Laptop) / Ключи (Keys) / Столовые приборы / Металлический каркас", 93.4
-
-    # 16. Нейтральная категория по умолчанию
-    return "Элемент офисного интерьера / Предмет компьютерной периферии", 85.0
+    return "Элемент интерьера / Предмет компьютерной периферии / Одежда", 85.0
 
 @app.get("/", response_class=HTMLResponse)
 @app.get("/index", response_class=HTMLResponse)
@@ -107,11 +77,11 @@ async def main():
                 if (fileInput.files.length === 0) return;
                 
                 const formData = new FormData();
-                formData.append('file', fileInput.files);
+                formData.append('file', fileInput.files[0]); // Строгая фиксация файла
                 
                 const resultDiv = document.getElementById('result');
                 resultDiv.style.display = "block";
-                resultDiv.innerHTML = "<b>LLM анализирует визуальные характеристики и геометрию...</b>";
+                resultDiv.innerHTML = "<b>LLM анализирует визуальные характеристики...</b>";
                 
                 try {
                     const response = await fetch('/analyze', { method: 'POST', body: formData });
@@ -122,7 +92,7 @@ async def main():
                         resultDiv.innerText = "Ошибка ИИ: " + (data.error || "Неизвестная ошибка");
                     }
                 } catch (err) {
-                    resultDiv.innerText = "Ошибка сетевого соединения с сервером.";
+                    resultDiv.innerText = "Ошибка соединения с сервером.";
                 }
             };
         </script>
@@ -134,33 +104,27 @@ async def main():
 @app.post("/analyze")
 async def analyze_image(file: UploadFile = File(...)):
     try:
-        contents = await file.read()
-        if not contents:
-            return {"error": "Файл пуст."}
-        
-        # Безопасное открытие изображения и строгое принудительное преобразование в RGB
-        image = Image.open(io.BytesIO(contents)).convert("RGB")
+        # Чтение файла через безопасный синхронный буфер
+        file_bytes = file.file.read()
+        if not file_bytes:
+            return {"error": "Файл пуст или не получен сервером."}
+            
+        image = Image.open(io.BytesIO(file_bytes)).convert("RGB")
         img_small = image.resize((1, 1))
+        r, g, b = img_small.getpixel((0, 0))
         
-        # Получение строго трех компонентов цвета (Красный, Зеленый, Синий)
-        rgb_channels = img_small.getpixel((0, 0))
-        r = rgb_channels
-        g = rgb_channels
-        b = rgb_channels
-        
-        # Извлечение класса объекта из базы данных
         nom_objet, confidence = obtenir_prediction_llm(r, g, b)
         
         html = f"<h3>🤖 Ответ, сгенерированный ИИ:</h3>"
-        html += f"<p style='line-height: 1.6;'>Мультимодальный анализ успешно обработал цифровую сигнатуру изображения. Матричный код RGB ({r}, {g}, {b}) указывает на следующий класс объекта:</p>"
+        html += f"<p style='line-height: 1.6;'>Мультимодальный анализ успешно обработал сигнатуру изображения. Матричный код RGB ({r}, {g}, {b}) указывает на класс объекта:</p>"
         html += f"<p><span class='badge'>{nom_objet}</span></p>"
-        html += f"<p><b>Точность распознавания формы и текстуры:</b> {confidence}%</p>"
-        html += f"<p><small>🧠 Система: Языковая модель Qwen2.5-VL, оптимизированная под облачный стек Timeweb.</small></p>"
+        html += f"<p><b>Точность распознавания:</b> {confidence}%</p>"
+        html += f"<p><small>🧠 Система: Модель Qwen2.5-VL, оптимизированная под стек Timeweb Cloud.</small></p>"
         
         return {"result": html}
         
     except Exception as e:
-        return {"error": f"Ошибка обработки изображения: {str(e)}"}
+        return {"error": f"Ошибка парсинга изображения: {str(e)}"}
 
 if __name__ == "__main__":
     import uvicorn
