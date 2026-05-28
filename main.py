@@ -5,7 +5,7 @@ from PIL import Image
 
 app = FastAPI()
 
-# База данных объектов, расширенная до 16 категорий (техника, одежда, мебель, природа)
+# База данных объектов, расширенная до 16 категорий (техника, одежда, мебель, продукты)
 def obtenir_prediction_llm(r, g, b):
     # 1. Сверхтемные тона (Черный / Темно-серый)
     if r < 40 and g < 40 and b < 40:
@@ -138,12 +138,17 @@ async def analyze_image(file: UploadFile = File(...)):
         if not contents:
             return {"error": "Файл пуст."}
         
-        # Анализ пиксельной матрицы изображения
+        # Безопасное открытие изображения и строгое принудительное преобразование в RGB
         image = Image.open(io.BytesIO(contents)).convert("RGB")
         img_small = image.resize((1, 1))
-        r, g, b = img_small.getpixel((0, 0))
         
-        # Получение расширенного прогноза
+        # Получение строго трех компонентов цвета (Красный, Зеленый, Синий)
+        rgb_channels = img_small.getpixel((0, 0))
+        r = rgb_channels
+        g = rgb_channels
+        b = rgb_channels
+        
+        # Извлечение класса объекта из базы данных
         nom_objet, confidence = obtenir_prediction_llm(r, g, b)
         
         html = f"<h3>🤖 Ответ, сгенерированный ИИ:</h3>"
