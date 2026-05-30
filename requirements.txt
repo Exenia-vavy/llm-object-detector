@@ -1,6 +1,0 @@
-fastapi
-uvicorn
-pillow
-python-multipart
-requests
-#http://localhost:3000/
