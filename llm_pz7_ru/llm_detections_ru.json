@@ -1,0 +1,198 @@
+{
+  "source_video": "video2.mp4",
+  "model_used": "qwen_vl",
+  "sample_interval_sec": 5.0,
+  "frame_detections": [
+    {
+      "frame_id": 0,
+      "timestamp_seconds": 0.0,
+      "objects": [
+        {
+          "class_id": -1,
+          "class_name": "дверь",
+          "confidence": 0.95,
+          "bbox": [
+            68,
+            0,
+            587,
+            1036
+          ]
+        }
+      ],
+      "object_count": 1
+    },
+    {
+      "frame_id": 150,
+      "timestamp_seconds": 5.0,
+      "objects": [
+        {
+          "class_id": -1,
+          "class_name": "человек",
+          "confidence": 0.95,
+          "bbox": [
+            0,
+            113,
+            500,
+            1063
+          ]
+        }
+      ],
+      "object_count": 1
+    },
+    {
+      "frame_id": 300,
+      "timestamp_seconds": 10.0,
+      "objects": [
+        {
+          "class_id": -1,
+          "class_name": "человек",
+          "confidence": 0.95,
+          "bbox": [
+            0,
+            87,
+            386,
+            1035
+          ]
+        },
+        {
+          "class_id": -1,
+          "class_name": "человек",
+          "confidence": 0.95,
+          "bbox": [
+            355,
+            269,
+            588,
+            1035
+          ]
+        }
+      ],
+      "object_count": 2
+    },
+    {
+      "frame_id": 450,
+      "timestamp_seconds": 15.0,
+      "objects": [
+        {
+          "class_id": -1,
+          "class_name": "человек",
+          "confidence": 0.95,
+          "bbox": [
+            0,
+            83,
+            588,
+            1063
+          ]
+        }
+      ],
+      "object_count": 1
+    },
+    {
+      "frame_id": 600,
+      "timestamp_seconds": 20.0,
+      "objects": [
+        {
+          "class_id": -1,
+          "class_name": "человек",
+          "confidence": 1.0,
+          "bbox": [
+            0,
+            135,
+            588,
+            1036
+          ]
+        }
+      ],
+      "object_count": 1
+    },
+    {
+      "frame_id": 750,
+      "timestamp_seconds": 25.0,
+      "objects": [
+        {
+          "class_id": -1,
+          "class_name": "человек",
+          "confidence": 0.95,
+          "bbox": [
+            0,
+            73,
+            588,
+            1036
+          ]
+        }
+      ],
+      "object_count": 1
+    },
+    {
+      "frame_id": 900,
+      "timestamp_seconds": 30.0,
+      "objects": [
+        {
+          "class_id": -1,
+          "class_name": "человек",
+          "confidence": 0.95,
+          "bbox": [
+            0,
+            36,
+            588,
+            1036
+          ]
+        }
+      ],
+      "object_count": 1
+    },
+    {
+      "frame_id": 1050,
+      "timestamp_seconds": 35.0,
+      "objects": [
+        {
+          "class_id": -1,
+          "class_name": "человек",
+          "confidence": 0.95,
+          "bbox": [
+            0,
+            130,
+            588,
+            1036
+          ]
+        }
+      ],
+      "object_count": 1
+    },
+    {
+      "frame_id": 1200,
+      "timestamp_seconds": 40.0,
+      "objects": [
+        {
+          "class_id": -1,
+          "class_name": "человек",
+          "confidence": 0.95,
+          "bbox": [
+            0,
+            100,
+            588,
+            1036
+          ]
+        }
+      ],
+      "object_count": 1
+    },
+    {
+      "frame_id": 1350,
+      "timestamp_seconds": 45.0,
+      "objects": [
+        {
+          "class_id": -1,
+          "class_name": "человек",
+          "confidence": 0.95,
+          "bbox": [
+            0,
+            138,
+            587,
+            1036
+          ]
+        }
+      ],
+      "object_count": 1
+    }
+  ]
+}
